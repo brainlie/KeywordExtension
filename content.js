@@ -15,8 +15,7 @@ function getTextNodes() {
                 }
                 return NodeFilter.FILTER_REJECT;
             }
-        },
-        false
+        }
     );
 
     let nodeList = [];
@@ -66,35 +65,6 @@ function generateHighlightedText(text, keywords, omittedWords) {
     return result.join(' ');
 }
 
-// Main function to check if the extension is enabled and process the page
-function main() {
-    chrome.storage.local.get('extension_enabled', data => {
-        let isEnabled = data.extension_enabled;
-        if (isEnabled === true) {
-            // Proceed with processing
-            let textNodes = getTextNodes();
-            processTextNodes(textNodes);
-        } else {
-            // Extension is disabled or not set, do nothing
-            return;
-        }
-    });
-}
-
-// Listen for changes in the enable/disable state
-chrome.storage.onChanged.addListener((changes, area) => {
-    if (area === 'local' && changes.extension_enabled) {
-        let isEnabled = changes.extension_enabled.newValue;
-        if (!isEnabled) {
-            // Extension was disabled, remove modifications
-            removeHighlights();
-        } else {
-            // Extension was enabled, process the page
-            main();
-        }
-    }
-});
-
 // Function to remove highlights and restore original text
 function removeHighlights() {
     let highlightedElements = document.querySelectorAll('[data-keyword-highlighter="true"]');
@@ -105,5 +75,27 @@ function removeHighlights() {
     });
 }
 
-// Start the main function
-main();
+// Function to process or revert changes based on the extension state
+function updatePage() {
+    chrome.storage.local.get('extension_enabled', data => {
+        let isEnabled = data.extension_enabled;
+        if (isEnabled === true) {
+            // Extension is enabled, process the page
+            let textNodes = getTextNodes();
+            processTextNodes(textNodes);
+        } else {
+            // Extension is disabled, remove modifications
+            removeHighlights();
+        }
+    });
+}
+
+// Listen for messages from the popup or background script
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+    if (request.action === 'updateState') {
+        updatePage();
+    }
+});
+
+// Initial execution when the content script is loaded
+updatePage();

@@ -70,13 +70,13 @@ function generateHighlightedText(text, keywords, omittedWords) {
 function main() {
     chrome.storage.local.get('extension_enabled', data => {
         let isEnabled = data.extension_enabled;
-        if (isEnabled === false) {
-            // Extension is disabled, do nothing
-            return;
-        } else {
+        if (isEnabled === true) {
             // Proceed with processing
             let textNodes = getTextNodes();
             processTextNodes(textNodes);
+        } else {
+            // Extension is disabled or not set, do nothing
+            return;
         }
     });
 }

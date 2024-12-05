@@ -23,7 +23,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (data.extension_enabled !== undefined) {
             document.getElementById('enableExtension').checked = data.extension_enabled;
         } else {
-            document.getElementById('enableExtension').checked = true; // Default to enabled
+            document.getElementById('enableExtension').checked = false; // Default to disabled
         }
     });
 });

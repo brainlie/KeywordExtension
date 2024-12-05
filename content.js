@@ -37,6 +37,7 @@ function processTextNodes(textNodes) {
                 // Replace the text node with a span containing highlighted keywords and dimmed omitted words
                 let newHTML = generateHighlightedText(text, response.keywords, response.omitted);
                 let span = document.createElement('span');
+                span.setAttribute('data-keyword-highlighter', 'true');
                 span.innerHTML = newHTML;
                 node.parentNode.replaceChild(span, node);
             }
@@ -65,6 +66,44 @@ function generateHighlightedText(text, keywords, omittedWords) {
     return result.join(' ');
 }
 
-// Main execution
-let textNodes = getTextNodes();
-processTextNodes(textNodes);
+// Main function to check if the extension is enabled and process the page
+function main() {
+    chrome.storage.local.get('extension_enabled', data => {
+        let isEnabled = data.extension_enabled;
+        if (isEnabled === false) {
+            // Extension is disabled, do nothing
+            return;
+        } else {
+            // Proceed with processing
+            let textNodes = getTextNodes();
+            processTextNodes(textNodes);
+        }
+    });
+}
+
+// Listen for changes in the enable/disable state
+chrome.storage.onChanged.addListener((changes, area) => {
+    if (area === 'local' && changes.extension_enabled) {
+        let isEnabled = changes.extension_enabled.newValue;
+        if (!isEnabled) {
+            // Extension was disabled, remove modifications
+            removeHighlights();
+        } else {
+            // Extension was enabled, process the page
+            main();
+        }
+    }
+});
+
+// Function to remove highlights and restore original text
+function removeHighlights() {
+    let highlightedElements = document.querySelectorAll('[data-keyword-highlighter="true"]');
+    highlightedElements.forEach(element => {
+        let originalText = element.innerText;
+        let textNode = document.createTextNode(originalText);
+        element.parentNode.replaceChild(textNode, element);
+    });
+}
+
+// Start the main function
+main();
